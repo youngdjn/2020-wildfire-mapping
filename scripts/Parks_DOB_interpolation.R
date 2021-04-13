@@ -132,7 +132,8 @@ if(!file.exists(datadir("intermediate/hotspots_compiled_caclip.gpkg"))) {
   viirs_hotspots = st_read(datadir("fire_detections/viirs_iband_fire_2020_366_conus_shapefile/viirs_iband_fire_2020_366_conus.shp"))	
   viirs_hotspots = viirs_hotspots %>%
     rename(TEMP = BT4TEMP,
-           VIIRS_CONF = CONF)
+           VIIRS_CONF = CONF) %>%
+    filter(SRC != "gsfc_drl") # to get rid of about 1-5% of points that are not in the VIIRs dataset Parks uses (https://firms.modaps.eosdis.nasa.gov/)
   	
   hotspots = bind_rows(modis_hotspots,viirs_hotspots)
   
