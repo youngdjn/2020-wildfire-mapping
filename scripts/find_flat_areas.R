@@ -4,6 +4,7 @@ library(here)
 library(sf)
 library(tidyverse)
 library(raster)
+library(terra)
 
 # The root of the data directory
 data_dir = readLines(here("data_dir.txt"), n=1)
@@ -17,12 +18,11 @@ flat = slope < 40
 
 writeRaster(flat, datadir("dem/flat_areas.tif"))
 
-flat_clump = clump(flat, directions=4)
+flat = rast(datadir("dem/flat_areas.tif"))
 
-#get clump size as df
-clump_df <- na.omit(subset(as.data.frame(freq(flat_clump)), count > 0))
+flat_coarse = aggregate(flat,fact=10)
+writeRaster(flat_coarse,datadir("dem/flat_areas_coarse.tif"))
+flat_poly = terra::as.polygons(flat_coarse, trunc=FALSE)
 
-# create a raster with flat area size
-flat_clump_size = reclassify(flat_clump,clump_df)
-
+writeVector(flat_poly,datadir("dem/flat_poly_coarse"), filetype="ESRI shapefile", overwrite=TRUE)
 

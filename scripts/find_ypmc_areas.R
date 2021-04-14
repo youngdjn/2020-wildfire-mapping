@@ -53,6 +53,7 @@ eveg_raster[is.na(eveg_raster)] = 0
 
 eveg_coarse = aggregate(eveg_raster, fact=10, fun="mean")
 eveg_coarse[eveg_coarse == 0] = NA
+writeRaster(eveg_coarse,datadir("eveg/ypmc_rasterized_coarse.tif"))
 
 eveg_poly = terra::as.polygons(eveg_coarse,trunc=FALSE)
 
