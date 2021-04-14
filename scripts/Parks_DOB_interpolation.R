@@ -69,15 +69,27 @@ source(here("scripts/convenience_functions.R"))
 	# fire.perims <- st_transform(fire.perims, '+proj=longlat +datum=WGS84 +no_defs')
 
 # DYoung code:
-# Load fire perims. Until FRAP releases 2020 perims, data from: "National USFS Final Fire Perimeter" https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=fire+perimeter
-fire.perims = st_read(datadir("fire_perims/S_USA.FinalFirePerimeter/S_USA.FinalFirePerimeter.shp"))
-# Filter to 2020 fires, CA, > 1000 acres
+# # Load fire perims. Until FRAP releases 2020 perims, data from: "National USFS Final Fire Perimeter" https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=fire+perimeter
+# fire.perims = st_read(datadir("fire_perims/S_USA.FinalFirePerimeter/S_USA.FinalFirePerimeter.shp"))
+# fire.perims = fire.perims %>%
+#   mutate(state = str_sub(UNITIDOWNE,1,2)) %>%
+#   filter(DISCOVERYD > "2020-01-01" & DISCOVERYD < "2021-01-01",
+#          GISACRES > 1000,
+#          state == "CA") %>%
+#   rename(Fire_ID = "FIREOCCURI") %>%
+#   mutate(Fire_ID = paste0("2020-",FIRENAME,Fire_ID))
+
+## New method using draft Cal Fire perims
+fire.perims = st_read(datadir("fire_perims/DRAFT_Wildfire_Perimeters_2020_DRAFT.gdb"))
 fire.perims = fire.perims %>%
-  mutate(state = str_sub(UNITIDOWNE,1,2)) %>%
+  mutate(state = "CA") %>%
+  rename(DISCOVERYD = ALARM_DATE) %>%
   filter(DISCOVERYD > "2020-01-01" & DISCOVERYD < "2021-01-01",
-         GISACRES > 1000,
+         GIS_ACRES > 1000,
          state == "CA") %>%
-  rename(Fire_ID = "FIREOCCURI")
+  mutate(Fire_ID = paste0("2020_",FIRE_NAME,"_",INC_NUM))
+# Filter to 2020 fires, CA, > 1000 acres
+
 ##!! End DYoung mod
 
 
@@ -159,6 +171,9 @@ if(!file.exists(datadir("intermediate/hotspots_compiled_caclip.gpkg"))) {
 
 
 fire.list <- "33CBB9DC-6983-4F47-B821-9C9A6CAC381D" # <- DYoung mod. Original: unique(subset(fire.perims, Year == year)$Fire_ID)
+fire.list <- unique(subset(fire.perims)$Fire_ID)
+fire.list = base::setdiff(fire.list,"2020_CREEK_00001391")
+
 
 for (xx in 1:length(fire.list)) {
 		
@@ -256,8 +271,8 @@ for (xx in 1:length(fire.list)) {
 		# st_write(fire.hotspots, file.name, delete_layer=TRUE)
 		
 		# New:
-		dir.create(datadir(paste0("temp/", fire)), recursive=TRUE)
-		file.name <- datadir(paste0("temp/",fire,"/", fire,"_hotspots.shp"))
+		dir.create(datadir(paste0("fire_progressions/", fire)), recursive=TRUE)
+		file.name <- datadir(paste0("fire_progressions/",fire,"/", fire,"_hotspots.shp"))
 		st_write(fire.hotspots, file.name, delete_layer=TRUE)
 		# End DYoung modified
 		
@@ -306,10 +321,10 @@ for (xx in 1:length(fire.list)) {
 	fire.perim.raster <- fasterize(fire.shp, blank.raster)
 
 	## Some perimeters may have zero fire detections, so a directory may not have been created in stage 1
-	if (dir.exists(datadir(paste0("temp/", fire)))) { # <- DYoung mod using new data directory reference
+	if (dir.exists(datadir(paste0("fire_progressions/", fire)))) { # <- DYoung mod using new data directory reference
 
 		# Get fire detetection points
-		fire.hotspots <- st_read(datadir(paste0("temp/",fire,"/", fire,"_hotspots.shp"))) # <- DYoung mod to use new data directory reference
+		fire.hotspots <- st_read(datadir(paste0("fire_progressions/",fire,"/", fire,"_hotspots.shp"))) # <- DYoung mod to use new data directory reference
 		fire.hotspots <- st_transform(fire.hotspots, crs=the.prj)
 
 		# I am under the impression that one should not interpolate DOB if there are not very many fire detections
@@ -424,7 +439,7 @@ for (xx in 1:length(fire.list)) {
 			
 			modeled.dob <- rasterFromXYZ(xyz, res=c(pixel.size, pixel.size), digits=0, crs=the.prj)		
 			# V Mod by DY to use new data folder reference
-			writeRaster(modeled.dob, datadir(paste0("temp/",fire,"/", fire,"dob.temp.tif")), format="GTiff", options=c("COMPRESS=LZW", "TFW=YES"), datatype='INT2S', overwrite=T)
+			writeRaster(modeled.dob, datadir(paste0("fire_progressions/",fire,"/", fire,"_dob.temp.tif")), format="GTiff", options=c("COMPRESS=LZW", "TFW=YES"), datatype='INT2S', overwrite=T)
 			
 		}
 	}
@@ -450,12 +465,12 @@ for (xx in 1:length(fire.list)) {
 
 	## This is a check because stage 1 and 2 does not produce files if there are not enough fire detections
 	# V DYoung mod to new data folder reference, also removed redundant check if data dir exists (because if the file exists, the dir exists)
-	if (file.exists(datadir(paste0("temp/",fire,"/", fire,"dob.temp.tif")))) {
+	if (file.exists(datadir(paste0("fire_progressions/",fire,"/", fire,"_dob.temp.tif")))) {
 
 		# Load up the modeled DOB
 
 	  # V DYoung mod to new data folder reference
-		modeled.dob.raster <- raster(datadir(paste0("temp/",fire,"/", fire,"dob.temp.tif")))
+		modeled.dob.raster <- raster(datadir(paste0("fire_progressions/",fire,"/", fire,"_dob.temp.tif")))
 
 
 		# Basically, these next steps create 'regions' for all continuous DOB estimates that are less than 25 ha
@@ -506,6 +521,13 @@ for (xx in 1:length(fire.list)) {
 		xy$ID <- row.names(xy)
 
 		nibble.df <- subset(xy, extract == 99)
+		
+		# DYoung addition: if there are no small regions, just write the same raster and iterate loop to next fire
+		if(nrow(dob.df) == 0) {
+		  writeRaster(modeled.dob.raster, datadir(paste0("fire_progressions/",fire,"/", fire,"_dob.tif")), format="GTiff", options=c("COMPRESS=LZW", "TFW=YES"), datatype='INT2U', overwrite=T)
+		  next()
+		}
+		
 		nibble.df <- nibble.df[,-c(3,4)]
 		dob.df <- subset(xy, extract != 99)
 
@@ -526,7 +548,7 @@ for (xx in 1:length(fire.list)) {
 		# This is the final DOB estimate	
 		modeled.dob <- rasterFromXYZ(dob.df, res=c(pixel.size,pixel.size), digits=0, crs=(the.prj))
 		# V DYoung mod to use new data folder reference
-		writeRaster(modeled.dob, datadir(paste0("temp/",fire,"/", fire,"dob.tif")), format="GTiff", options=c("COMPRESS=LZW", "TFW=YES"), datatype='INT2U', overwrite=T)
+		writeRaster(modeled.dob, datadir(paste0("fire_progressions/",fire,"/", fire,"_dob.tif")), format="GTiff", options=c("COMPRESS=LZW", "TFW=YES"), datatype='INT2U', overwrite=T)
 #		file.remove('dob.tmp.tif'); file.remove('dob.tmp.tfw')
 	}
 
