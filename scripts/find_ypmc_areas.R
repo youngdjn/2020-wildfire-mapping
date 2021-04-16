@@ -19,27 +19,33 @@ eveg_scoast = st_read(datadir("eveg/S_USA.EVMid_R05_NorCoastMid.gdb"))
 eveg_sscoast = st_read(datadir("eveg/S_USA.EVMid_R05_NorCoastWest.gdb"))
 eveg_nsierra = st_read(datadir("eveg/S_USA.EVMid_R05_NorthSierra.gdb"))
 eveg_ssierra = st_read(datadir("eveg/S_USA.EVMid_R05_SouthSierra.gdb"))
+eveg_ninterior = st_read(datadir("eveg/S_USA.EVMid_R05_NorthInterior.gdb"))
+
 
 # retain only ypmc veg of each
-whr_focal = c("DFR","EPN","JPN","MHC","PPN","SMC","WFR")                
-eveg_ncoast  = eveg_ncoast %>%
-  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & (!(CWHR_TYPE %in% c("RFR","LPN","SCN")))))
-eveg_scoast  = eveg_scoast %>%
-  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & (!(CWHR_TYPE %in% c("RFR","LPN","SCN")))))
-eveg_sscoast  = eveg_sscoast %>%
-  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & (!(CWHR_TYPE %in% c("RFR","LPN","SCN")))))
-eveg_nsierra  = eveg_nsierra %>%
-  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & (!(CWHR_TYPE %in% c("RFR","LPN","SCN")))))
-eveg_ssierra  = eveg_ssierra %>%
-  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & (!(CWHR_TYPE %in% c("RFR","LPN","SCN")))))
+whr_focal = c("DFR")                
+whr_focal = c("DFR","EPN","JPN","MHC","PPN","SMC","WFR","KMC")                
 
-eveg = bind_rows(eveg_ncoast,eveg_scoast,eveg_sscoast,eveg_nsierra,eveg_ssierra)
+eveg_ncoast  = eveg_ncoast %>%
+  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & ((CWHR_TYPE %in% c("AGS","PGS","MCH","MCP")))))
+eveg_scoast  = eveg_scoast %>%
+  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & (!(CWHR_TYPE %in% c("RFR","LPN","SCN","CPC","RDW"           ,"EPN","JPN","MHC","PPN","SMC","WFR","KMC","PJN","JUN")))))
+eveg_sscoast  = eveg_sscoast %>%
+  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & (!(CWHR_TYPE %in% c("RFR","LPN","SCN","CPC","RDW"           ,"EPN","JPN","MHC","PPN","SMC","WFR","KMC","PJN","JUN")))))
+eveg_nsierra  = eveg_nsierra %>%
+  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & ((CWHR_TYPE %in% c("AGS","PGS","MCH","MCP")))))
+eveg_ssierra  = eveg_ssierra %>%
+  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & (!(CWHR_TYPE %in% c("RFR","LPN","SCN","CPC","RDW"           ,"EPN","JPN","MHC","PPN","SMC","WFR","KMC","PJN","JUN")))))
+eveg_ninterior  = eveg_ninterior %>%
+  filter(CWHR_TYPE %in% whr_focal | (COVERTYPE == "CON" & (!(CWHR_TYPE %in% c("RFR","LPN","SCN","CPC","RDW"           ,"EPN","JPN","MHC","PPN","SMC","WFR","KMC","PJN","JUN")))))
+
+eveg = bind_rows(eveg_ncoast,eveg_scoast,eveg_sscoast,eveg_nsierra,eveg_ssierra,eveg_ninterior)
 
 eveg$type_cat = 1
 eveg_proj = st_transform(eveg,st_crs(raster_template))
 eveg_rast = fasterize(eveg_proj,raster_template,field="type_cat",fun="max")
 
-writeRaster(eveg_rast,datadir("eveg/ypmc_rasterized.tif"))
+writeRaster(eveg_rast,datadir("eveg/dfr_rasterized.tif"), overwrite=TRUE)
 
 
 ### Read in to STARS to vectorize, buffer, save
