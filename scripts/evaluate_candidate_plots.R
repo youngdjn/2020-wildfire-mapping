@@ -21,17 +21,24 @@ d = d %>%
   mutate(august_cplx = ifelse(FIRE_NAME == "AUGUST COMPLEX FIRES",TRUE,FALSE)) %>%
   filter(ypmc == TRUE) %>%
   mutate(date = as.Date(progression,origin="2019-12-31")) %>%
-  mutate(state_forest = ifelse(owner == "calfire",TRUE,FALSE))
+  mutate(state_forest = ifelse(owner == "calfire",TRUE,FALSE)) %>%
+  mutate(FIRE_NAME = recode(FIRE_NAME,
+                            "AUGUST COMPLEX FIRES" = "August Complex",
+                            "CASTLE" = "Castle",
+                            "CREEK" = "Creek",
+                            "NORTH COMPLEX" = "North Complex"))
 
-g = ggplot(d,aes(x=date,y=temperature,color=FIRE_NAME)) +
-  geom_jitter(size=1,width=0.5) +
-  facet_grid(~august_cplx) +
-  theme_bw() +
-  scale_color_viridis_d() +
+g = ggplot(d %>% filter(FIRE_NAME != "CALDWELL"),aes(x=date,y=temperature,color=FIRE_NAME)) +
+  geom_jitter(size=0.5,width=0.5) +
+  #facet_grid(~august_cplx) +
+  theme_bw(18) +
+  scale_color_viridis_d(name="Fire") +
   scale_x_date(date_labels= "%d-%b") +
   #geom_point(data=d %>% filter(owner == "calfire"),size=4,color="red")
-  labs(x = "Burn date", y = "Mean annual temperature (°C)")
+  labs(x = "Burn date", y = "Mean annual temperature (°C)") +
+  guides(color = guide_legend(override.aes = list(size=2))) +
+  theme(legend.position = c(.8,.85), legend.background = element_rect(fill=NA))
 
-png(datadir("figures/temperature-vs-burndate_august-sep.png"), width=2000,height=1000,res=150)
+png(datadir("figures/temperature-vs-burndate.png"), width=1000,height=1000,res=150)
 g
 dev.off()
