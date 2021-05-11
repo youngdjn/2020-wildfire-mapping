@@ -33,12 +33,12 @@ g = ggplot(d %>% filter(FIRE_NAME != "CALDWELL"),aes(x=date,y=temperature,color=
   #facet_grid(~august_cplx) +
   theme_bw(18) +
   scale_color_viridis_d(name="Fire") +
-  scale_x_date(date_labels= "%d-%b") +
+  scale_x_date(date_labels= "%d-%b", limits = c(as.Date("2020-8-17"),as.Date("2020-10-16"))) +
   #geom_point(data=d %>% filter(owner == "calfire"),size=4,color="red")
   labs(x = "Burn date", y = "Mean annual temperature (°C)") +
   guides(color = guide_legend(override.aes = list(size=2))) +
-  theme(legend.position = c(.8,.85), legend.background = element_rect(fill=NA))
+  theme(legend.position = c(.70,.87), legend.background = element_rect(fill=NA))
 
-png(datadir("figures/temperature-vs-burndate.png"), width=1000,height=1000,res=150)
+png(datadir("figures/temperature-vs-burndate.png"), width=800,height=1000,res=150)
 g
 dev.off()
