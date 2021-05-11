@@ -10,6 +10,11 @@ data_dir = readLines(here("data_dir.txt"), n=1)
 # Convenience functions, including function datadir() to prepend data directory to a relative path
 source(here("scripts/convenience_functions.R"))
 
+
+#visitor = rast(datadir("basemaps/SNF map/snf_11.jpg"))
+visitor = rast(datadir("basemaps/PNF map/pnf_01_shifted.jpg"))
+visitor_clip = crop(visitor,fire_foc %>% st_transform(crs(visitor)))
+
 firename = "north"
 
 fires = st_read(datadir("fire_perims/DRAFT_Wildfire_Perimeters_2020_DRAFT.gpkg"))
@@ -17,10 +22,6 @@ fires = st_read(datadir("fire_perims/DRAFT_Wildfire_Perimeters_2020_DRAFT.gpkg")
 fire_foc = fires %>%
   filter(FIRE_NAME == "NORTH COMPLEX", REPORT_AC > 10000)
 
-
-#visitor = rast(datadir("basemaps/SNF map/snf_11.jpg"))
-visitor = rast(datadir("basemaps/PNF map/pnf_01_shifted.jpg"))
-visitor_clip = crop(visitor,fire_foc %>% st_transform(crs(visitor)))
 
 slope = rast(datadir("dem/CAmerged14_albers_slope.tif"))
 slope_clip = crop(slope,fire_foc %>% st_transform(crs(slope)))
@@ -39,6 +40,6 @@ spots_clip = spots[spots_intersects,]
 writeRaster(slope_clip,datadir(paste0("qfield_prep/",firename,"_slope_clip.tif")),gdal=c("COMPRESS=DEFLATE", "TFW=NO"), NAflag=NA)
 writeRaster(sev_clip,datadir(paste0("qfield_prep/",firename,"_sev_clip.tif")),gdal=c("COMPRESS=DEFLATE", "TFW=NO"), NAflag=NA)
 writeRaster(visitor_clip,datadir(paste0("qfield_prep/",firename,"_visitor_clip.tif")),gdal=c("COMPRESS=DEFLATE", "TFW=NO"))
-st_write(grid_clip,datadir(paste0("qfield_prep/",firename,"_grid_clip.gpkg")))
-st_write(spots_clip,datadir(paste0("qfield_prep/",firename,"_spots_clip.gpkg")))
-st_write(spots_clip,datadir(paste0("qfield_prep/",firename,"_spots_clip.kml")))
+st_write(grid_clip,datadir(paste0("qfield_prep/",firename,"_grid_clip.gpkg")),append=FALSE)
+st_write(spots_clip,datadir(paste0("qfield_prep/",firename,"_spots_clip.gpkg")),append=FALSE)
+st_write(spots_clip,datadir(paste0("qfield_prep/",firename,"_spots_clip.kml")),append=FALSE)
