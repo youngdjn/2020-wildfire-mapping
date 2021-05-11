@@ -19,7 +19,7 @@ fires_foc = fires %>%
   vect
 
 firesev = rast(datadir("fire_severity/ravg_2020_ba7_20210112.tif"))
-
+firesev[firesev == 9] = 1 # 9 seems to be unknown or unmapped
 
 sev = crop(firesev,fires_foc %>% project(firesev))
 sev = mask(sev,fires_foc %>% project(firesev))
