@@ -137,7 +137,7 @@ grid = grid %>%
   filter(firesev > 2)
 
 # filter by low-severity mainland
-st_write(lowsev_mainland,datadir("temp/tmp_lowsev_mainland2"),driver="ESRI Shapefile")
+st_write(lowsev_mainland,datadir("temp/tmp_lowsev_mainland2"),driver="ESRI Shapefile",append=FALSE)
 lowsev_mainland = st_read(datadir("temp/tmp_lowsev_mainland2"))
 lowsev_mainland = lowsev_mainland %>%
   mutate(lowsev_mainland = 1) %>%
