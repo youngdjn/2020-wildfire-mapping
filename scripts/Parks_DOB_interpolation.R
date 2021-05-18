@@ -79,8 +79,8 @@ source(here("scripts/convenience_functions.R"))
 #   rename(Fire_ID = "FIREOCCURI") %>%
 #   mutate(Fire_ID = paste0("2020-",FIRENAME,Fire_ID))
 
-## New method using draft Cal Fire perims
-fire.perims = st_read(datadir("fire_perims/DRAFT_Wildfire_Perimeters_2020_DRAFT.gdb"))
+## New method using Cal Fire perims
+fire.perims = st_read(datadir("fire_perims/fire20_1.gdb"), layer="firep20_1")
 fire.perims = fire.perims %>%
   mutate(state = "CA") %>%
   rename(DISCOVERYD = ALARM_DATE) %>%
@@ -89,6 +89,10 @@ fire.perims = fire.perims %>%
          state == "CA") %>%
   mutate(Fire_ID = paste0("2020_",FIRE_NAME,"_",INC_NUM))
 # Filter to 2020 fires, CA, > 1000 acres
+
+# temporary, only run for GOLD and RED SALMON COMPLEX
+fire.perims = fire.perims %>%
+  filter(FIRE_NAME %in% c("GOLD","RED SALMON COMPLEX"))
 
 ##!! End DYoung mod
 
@@ -522,15 +526,15 @@ for (xx in 1:length(fire.list)) {
 
 		nibble.df <- subset(xy, extract == 99)
 		
+		nibble.df <- nibble.df[,-c(3,4)]
+		dob.df <- subset(xy, extract != 99)
+
 		# DYoung addition: if there are no small regions, just write the same raster and iterate loop to next fire
 		if(nrow(dob.df) == 0) {
 		  writeRaster(modeled.dob.raster, datadir(paste0("fire_progressions/",fire,"/", fire,"_dob.tif")), format="GTiff", options=c("COMPRESS=LZW", "TFW=YES"), datatype='INT2U', overwrite=T)
 		  next()
 		}
 		
-		nibble.df <- nibble.df[,-c(3,4)]
-		dob.df <- subset(xy, extract != 99)
-
 		dob.df$ID <- seq(1, nrow(dob.df))
 		dob.df.tmp <- dob.df[,-c(1,2,3)]
 		dob.df.tmp$id.tmp <- dob.df.tmp$ID
