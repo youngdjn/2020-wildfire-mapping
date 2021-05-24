@@ -29,7 +29,7 @@ d = d %>%
                             "NORTH COMPLEX" = "North Complex"))
 
 g = ggplot(d %>% filter(FIRE_NAME != "CALDWELL"),aes(x=date,y=temperature,color=FIRE_NAME)) +
-  geom_jitter(size=0.5,width=0.5) +
+  geom_jitter(size=0.5,width=0.4) +
   #facet_grid(~august_cplx) +
   theme_bw(18) +
   scale_color_viridis_d(name="Fire") +
@@ -37,8 +37,12 @@ g = ggplot(d %>% filter(FIRE_NAME != "CALDWELL"),aes(x=date,y=temperature,color=
   #geom_point(data=d %>% filter(owner == "calfire"),size=4,color="red")
   labs(x = "Burn date", y = "Mean annual temperature (°C)") +
   guides(color = guide_legend(override.aes = list(size=2))) +
-  theme(legend.position = c(.70,.87), legend.background = element_rect(fill=NA))
+  theme(legend.position = c(.75,.87), legend.background = element_rect(fill=NA))
 
 png(datadir("figures/temperature-vs-burndate.png"), width=800,height=1000,res=150)
+g
+dev.off()
+
+png(datadir("figures/temperature-vs-burndate_wide.png"), width=1600,height=1000,res=150)
 g
 dev.off()

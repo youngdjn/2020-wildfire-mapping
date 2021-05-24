@@ -26,7 +26,7 @@ ownership = st_read(datadir("ownership/California_Land_Ownership/California_Land
   dplyr::select(owner)
 
 # Low-severity mainland
-lowsev_mainland = st_read(datadir("fire_severity/near_lots_sev_under4.gpkg"))
+lowsev_mainland = st_read(datadir("fire_severity/near_lots_sev_under5/"))
 
 
 cwhrtype = rast(datadir("eveg/cwhrtype_rasterized.tif"))
@@ -108,8 +108,10 @@ writeVector(grid,datadir("temp/temp_plotgrid.gpkg"),filetype="GPKG", overwrite=T
 grid = st_read(datadir("temp/temp_plotgrid.gpkg"))
 grid = st_transform(grid,st_crs(ownership))
 grid = st_join(grid,ownership)
+## filter to only USFS
 grid = grid %>%
-  filter(!is.na(owner))
+  filter(!is.na(owner)) %>%
+  filter(owner == "fs")
 
 
 ## recode calveg
@@ -132,9 +134,9 @@ grid = grid %>%
 grid = grid %>%
   filter(slope < 30)
 
-## filter by firesev
-grid = grid %>%
-  filter(firesev > 2)
+# ## filter by firesev
+# grid = grid %>%
+#   filter(firesev > 2)
 
 # filter by low-severity mainland
 st_write(lowsev_mainland,datadir("temp/tmp_lowsev_mainland2"),driver="ESRI Shapefile",append=FALSE)
@@ -143,15 +145,40 @@ lowsev_mainland = lowsev_mainland %>%
   mutate(lowsev_mainland = 1) %>%
   dplyr::select(lowsev_mainland)
 grid = st_join(grid %>% st_transform(st_crs(lowsev_mainland)),lowsev_mainland)
-grid = grid %>%
-  filter(is.na(lowsev_mainland))
-
-
 
 ## they are no match if they are non-fs, non-calfire, chaparral
 grid = grid %>%
   mutate(goodmatch = (!(mch == TRUE)) & (owner %in% c("blm","fs","calfire")))
 
+## exclude if they're near an unmapped severity
+sev_unmapped = st_read(datadir("fire_severity/unmapped_severity/"))
+sev_unmapped = sev_unmapped %>%
+  mutate(unmapped = TRUE)
+grid = st_transform(grid,st_crs(sev_unmapped))
+grid = st_join(grid,sev_unmapped)
+## filter to only USFS
+grid = grid %>%
+  filter(is.na(unmapped))
+
+## determine if they're in a highsev-lowsev transition
+transition_zone = st_read(datadir("fire_severity/highsev_lowsev_transition/highsev_lowsev_transition.shp"))
+transition_zone = transition_zone %>%
+  mutate(transition_zone = 1) %>%
+  dplyr::select(transition_zone)
+grid = st_join(grid %>% st_transform(st_crs(transition_zone)),transition_zone)
 
 
-st_write(grid,datadir("focal_area/candidate_grid_dense.gpkg"),append=FALSE)
+
+grid_facserot = grid %>%
+  filter(is.na(lowsev_mainland))
+
+grid_transition = grid %>%
+  filter(!is.na(transition_zone))
+
+
+
+
+
+#st_write(grid,datadir("focal_area/candidate_grid_dense_allRelevantPoints.gpkg"),append=FALSE)
+st_write(grid_facserot,datadir("focal_area/candidate_grid_dense_facserot.gpkg"),append=FALSE)
+st_write(grid_transition,datadir("focal_area/candidate_grid_dense_transition.gpkg"),append=FALSE)
