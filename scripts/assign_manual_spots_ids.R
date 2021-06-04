@@ -15,7 +15,7 @@ source(here("scripts/convenience_functions.R"))
 spots = st_read(datadir("focal_area/manual_scouted_spots_v2.gpkg"))
 
 ## get max ID
-max = max(spots$ID)
+max(spots$ID %>% str_sub(2,-1))
 if(max == -Inf) { 
   max = 0
   spots$ID = NA
@@ -25,7 +25,7 @@ if(max == -Inf) {
 is_na = (is.na(spots$ID) | is.null(spots$ID))
 n_na = sum(is_na)
 
-if(n_na > 0) spots[is_na,]$ID = 1:n_na + max
+if(n_na > 0) spots[is_na,]$ID = paste0("F",(1:n_na + max) %>% str_pad(width=4,pad=0))
 
 spots$name = spots$ID
 
@@ -37,7 +37,7 @@ st_write(spots,datadir("focal_area/manual_scouted_spots_v2.gpkg"),append=FALSE)
 spots = st_read(datadir("focal_area/manual_scouted_transition_spots_v2.gpkg"))
 
 ## get max ID
-max = max(spots$ID)
+max(spots$ID %>% str_sub(2,-1))
 if(max == -Inf) { 
   max = 0
   spots$ID = NA
@@ -47,7 +47,7 @@ if(max == -Inf) {
 is_na = (is.na(spots$ID) | is.null(spots$ID))
 n_na = sum(is_na)
 
-if(n_na > 0) spots[is_na,]$ID = 1:n_na + max
+if(n_na > 0) spots[is_na,]$ID = paste0("T",(1:n_na + max) %>% str_pad(width=4,pad=0))
 
 spots$name = spots$ID
 

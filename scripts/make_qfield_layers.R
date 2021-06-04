@@ -16,12 +16,18 @@ visitor = rast(datadir("basemaps/PNF map/pnf_01_shifted.jpg"))
 visitor = rast(datadir("basemaps/MNF_VisitorMap2012_ShadedRelief.pdf"))
 visitor = rast(datadir("basemaps/SQF map/sqf_south_10_alb.jpg"))
 
-firename = "castle"
+firename = "creek"
 
 fires = st_read(datadir("fire_perims/DRAFT_Wildfire_Perimeters_2020_DRAFT.gpkg"))
 
 fire_foc = fires %>%
   filter(FIRE_NAME == "CASTLE", REPORT_AC > 10000)
+fire_foc = fires %>%
+  filter(FIRE_NAME == "NORTH COMPLEX", REPORT_AC > 10000)
+fire_foc = fires %>%
+  filter(FIRE_NAME == "AUGUST COMPLEX FIRES")
+fire_foc = fires %>%
+  filter(FIRE_NAME == "CREEK", REPORT_AC > 10000)
 
 visitor_clip = crop(visitor,fire_foc %>% st_transform(crs(visitor)))
 
@@ -52,7 +58,7 @@ writeRaster(sev_clip,datadir(paste0("qfield_prep/",firename,"_sev_clip.tif")),gd
 writeRaster(visitor_clip,datadir(paste0("qfield_prep/",firename,"_visitor_clip.tif")),gdal=c("COMPRESS=DEFLATE", "TFW=NO"), overwrite=TRUE)
 st_write(grid_clip,datadir(paste0("qfield_prep/",firename,"_grid_clip.gpkg")),append=FALSE)
 st_write(spots_clip,datadir(paste0("qfield_prep/",firename,"_spots_clip.gpkg")),append=FALSE)
-st_write(spots_clip,datadir(paste0("qfield_prep/",firename,"_spots_clip.kml")),append=FALSE)
+st_write(spots_clip,datadir(paste0("qfield_prep/",firename,"_spots_facserot_clip.kml")),append=FALSE)
 st_write(grid_transition_clip,datadir(paste0("qfield_prep/",firename,"_grid_transition_clip.gpkg")),append=FALSE)
 st_write(spots_transition_clip,datadir(paste0("qfield_prep/",firename,"_spots_transition_clip.gpkg")),append=FALSE)
 st_write(spots_transition_clip,datadir(paste0("qfield_prep/",firename,"_spots_transition_clip.kml")),append=FALSE)

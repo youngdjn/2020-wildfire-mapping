@@ -1,4 +1,3 @@
-# assign IDs to new spots that have been added, but start the IDs aboe the ID of the existing ones
 
 library(here)
 library(sf)
@@ -71,6 +70,7 @@ ggplot(spots_strat,aes(x=progression,y=temperature,color=prog_temp_cat)) +
   scale_color_viridis_d() +
   scale_x_continuous(n.breaks=10) +
   scale_y_continuous(n.breaks=10)
+
 
 st_write(spots_strat,datadir("focal_area/manual_scouted_transition_spots_v2.gpkg"),append=FALSE)
 
