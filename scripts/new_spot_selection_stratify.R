@@ -22,13 +22,14 @@ fire_foc = fires %>%
   filter(FIRE_NAME == "AUGUST COMPLEX FIRES")
 fire_foc = fires %>%
   filter(FIRE_NAME == "CREEK", REPORT_AC > 10000)
+fire_foc = st_read(datadir("fire_perims/manual_augustNE.gpkg")) %>% mutate(FIRE_NAME = "AUGUST_NE")
 
 
+spots = st_read(datadir("focal_area/manual_scouted_spots_planet_augustNE.gpkg"))
+spots = st_read(datadir("focal_area/manual_scouted_spots_planet_creek.gpkg"))  
 
-spots = st_read(datadir("focal_area/manual_scouted_spots_planet.gpkg"))
-  
 #spots within focal fire only
-spots_fire = st_intersection(spots,fire_foc %>% st_transform(3310))
+spots_fire = st_intersection(spots %>% st_transform(3310),fire_foc %>% st_transform(3310))
 
 spots_cent = st_centroid(spots_fire)
   
@@ -66,9 +67,9 @@ spots_fire = spots_fire %>%
   mutate(prefix = recode(green_brown,
                          s = "S",
                          dm = "D",
-                         b = "F",
-                         g = "F",
-                         gb = "F")) %>%
+                         b = "C",
+                         g = "C",
+                         gb = "C")) %>%
   mutate(Name = paste0(prefix,IDnum))
 
 spots_cent = spots_fire %>% st_centroid()
@@ -79,7 +80,7 @@ allgrids = NULL
 for(i in 1:nrow(spots_fire)) {
   spot = spots_fire[i,]
   if(spot$prefix == "D") next()
-  cellsize = ifelse(spot$prefix == "S",30,50)
+  cellsize = ifelse(spot$prefix == "S",20,50)
   grid = st_make_grid(spot,cellsize = cellsize,what = "centers") %>% st_as_sf
   grid = st_intersection(grid,spot) %>%
     select(green_brown,n_trees,FIRE_NAME,easting,temperature,progression,spot_IDnum = IDnum,prefix,spot_Name = Name,x)
@@ -103,14 +104,14 @@ cut3 = cut1+2*cutstep
 cut4 = cut1+3*cutstep
 
 spots_cent = spots_cent %>%
-  mutate(prog_cat = cut(progression,breaks=c(0,cut2,cut3,cut4,1000),labels=c(1,2,3,4))) %>%
+  mutate(prog_cat = cut(progression,breaks=c(0,cut2,cut3,cut4,1000),labels=c(1,2,3,4))) %>% #labels=c(1,2,3,4)
   mutate(prog_cat = ifelse(prefix %in% c("S") ,-1,prog_cat)) %>%
   mutate(prog_cat = ifelse(prefix %in% c("D") ,-2,prog_cat))
 
 
-st_write(spots_cent,datadir("focal_area/new_spots_cent_north.gpkg"),delete_dsn=TRUE)
-st_write(spots_fire,datadir("focal_area/new_spots_poly_north.gpkg"),delete_dsn=TRUE)
-st_write(allgrids,datadir("focal_area/new_grid_north.gpkg"),delete_dsn=TRUE)
+st_write(spots_cent,datadir("focal_area/new_spots_cent_creek.gpkg"),delete_dsn=TRUE)
+st_write(spots_fire,datadir("focal_area/new_spots_poly_creek.gpkg"),delete_dsn=TRUE)
+st_write(allgrids,datadir("focal_area/new_grid_creek.gpkg"),delete_dsn=TRUE)
 
 
   

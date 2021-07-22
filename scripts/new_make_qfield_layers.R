@@ -15,8 +15,9 @@ visitor = rast(datadir("basemaps/SNF map/snf_11.jpg"))
 visitor = rast(datadir("basemaps/PNF map/pnf_01_shifted.jpg"))
 visitor = rast(datadir("basemaps/MNF_VisitorMap2012_ShadedRelief.pdf"))
 visitor = rast(datadir("basemaps/SQF map/sqf_south_10_alb.jpg"))
+visitor = rast(datadir("basemaps/SHF map/shf_west_10_alb.jpg"))
 
-firename = "north"
+firename = "creek2"
 
 fires = st_read(datadir("fire_perims/DRAFT_Wildfire_Perimeters_2020_DRAFT.gpkg"))
 
@@ -28,6 +29,7 @@ fire_foc = fires %>%
   filter(FIRE_NAME == "AUGUST COMPLEX FIRES")
 fire_foc = fires %>%
   filter(FIRE_NAME == "CREEK", REPORT_AC > 10000)
+fire_foc = st_read(datadir("fire_perims/manual_augustNE.gpkg"))
 
 visitor_clip = crop(visitor,fire_foc %>% st_transform(crs(visitor)))
 
@@ -37,10 +39,10 @@ slope_clip = crop(slope,fire_foc %>% st_transform(crs(slope)))
 sev = rast(datadir("fire_severity/ravg_2020_ba7_20210112.tif"))
 sev_clip = crop(sev,fire_foc %>% st_transform(crs(sev)))
 
-grid = st_read(datadir("focal_area/new_grid_north.gpkg"))
-spots = st_read(datadir("focal_area/new_spots_cent_north.gpkg"))
-spots_poly = st_read(datadir("focal_area/new_spots_poly_north.gpkg"))
-
+grid = st_read(datadir("focal_area/new_grid_creek.gpkg"))
+spots = st_read(datadir("focal_area/new_spots_cent_creek.gpkg"))
+spots_poly = st_read(datadir("focal_area/new_spots_poly_creek.gpkg"))
+roads = st_read(datadir("focal_area/new_snf_roads.gpkg"))
 
 writeRaster(slope_clip,datadir(paste0("qfield_prep2/",firename,"_slope_clip.tif")),gdal=c("COMPRESS=DEFLATE", "TFW=NO"), NAflag=NA, overwrite=TRUE)
 writeRaster(sev_clip,datadir(paste0("qfield_prep2/",firename,"_sev_clip.tif")),gdal=c("COMPRESS=DEFLATE", "TFW=NO"), NAflag=NA, overwrite=TRUE)
@@ -50,6 +52,8 @@ st_write(spots,datadir(paste0("qfield_prep2/",firename,"_spots_centers.gpkg")),a
 st_write(spots,datadir(paste0("qfield_prep2/",firename,"_spots_centers_all.kml")),append=FALSE)
 st_write(spots_poly,datadir(paste0("qfield_prep2/",firename,"_spots_polys.gpkg")),append=FALSE)
 st_write(spots_poly,datadir(paste0("qfield_prep2/",firename,"_spots_polys_all.kml")),append=FALSE)
+st_write(roads,datadir(paste0("qfield_prep2/",firename,"_manual_roads.kml")),append=FALSE)
+st_write(roads,datadir(paste0("qfield_prep2/",firename,"_manual_roads.gpkg")),append=FALSE)
 
 # make a set of polygons and centers that excludes DM
 spots_nodm = spots %>%
@@ -57,8 +61,8 @@ spots_nodm = spots %>%
 spots_poly_nodm = spots_poly %>%
   filter(prefix != "D")
 
-st_write(spots_nodm,datadir(paste0("qfield_prep2/",firename,"_spots_centers_nodm.kml")),append=FALSE)
-st_write(spots_poly_nodm,datadir(paste0("qfield_prep2/",firename,"_spots_polys_nodm.kml")),append=FALSE)
+st_write(spots_nodm,datadir(paste0("qfield_prep2/",firename,"_spots_centers_nodrone.kml")),append=FALSE)
+st_write(spots_poly_nodm,datadir(paste0("qfield_prep2/",firename,"_spots_polys_nodrone.kml")),append=FALSE)
 
 
 
