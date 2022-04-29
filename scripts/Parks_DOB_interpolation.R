@@ -69,18 +69,19 @@ source(here("scripts/convenience_functions.R"))
 	# fire.perims <- st_transform(fire.perims, '+proj=longlat +datum=WGS84 +no_defs')
 
 # DYoung code:
-# # Load fire perims. Until FRAP releases 2020 perims, data from: "National USFS Final Fire Perimeter" https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=fire+perimeter
-# fire.perims = st_read(datadir("fire_perims/S_USA.FinalFirePerimeter/S_USA.FinalFirePerimeter.shp"))
-# fire.perims = fire.perims %>%
-#   mutate(state = str_sub(UNITIDOWNE,1,2)) %>%
-#   filter(DISCOVERYD > "2020-01-01" & DISCOVERYD < "2021-01-01",
-#          GISACRES > 1000,
-#          state == "CA") %>%
-#   rename(Fire_ID = "FIREOCCURI") %>%
-#   mutate(Fire_ID = paste0("2020-",FIRENAME,Fire_ID))
+# Load fire perims. Until FRAP releases 2020 perims, data from: "National USFS Final Fire Perimeter" https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=fire+perimeter
+fire.perims = st_read(datadir("fire_perims/S_USA.FinalFirePerimeter/S_USA.FinalFirePerimeter.shp"))
+fire.perims = fire.perims %>%
+  mutate(state = str_sub(UNITIDOWNE,1,2)) %>%
+  filter(DISCOVERYD > "2021-01-01" & DISCOVERYD < "2022-01-01",
+         GISACRES > 1000,
+         state == "CA") %>%
+  rename(Fire_ID = "FIREOCCURI") %>%
+  mutate(Fire_ID = paste0("2020-",FIRENAME,Fire_ID))
 
 ## New method using Cal Fire perims
 fire.perims = st_read(datadir("fire_perims/fire20_1.gdb"), layer="firep20_1")
+fire.perims = st_read(datadir("fire_perims/ca3987612137920210714_20201012_20211015_ravg_data/ca3987612137920210714_20201012_20211015_burn_bndy.shp")) %>% st_union
 fire.perims = fire.perims %>%
   mutate(state = "CA") %>%
   rename(DISCOVERYD = ALARM_DATE) %>%
@@ -98,7 +99,7 @@ fire.perims = fire.perims %>%
 
 
 # Year of fires. You will need to modify this file if you have several years to process
-	year <- 2020 # <- mod by DYoung. Originai: fire.perims$Year[1]
+	year <- 202 # <- mod by DYoung. Originai: fire.perims$Year[1]
 
 
 # Set the output pixel size here. Canadian folk might want to consider 100 or 200 m.
@@ -144,8 +145,8 @@ fire.perims = fire.perims %>%
 if(!file.exists(datadir("intermediate/hotspots_compiled_caclip.gpkg"))) {
 	
   # Load MODIS and VIIRS hotspots. Data from: https://fsapps.nwcg.gov/afm/gisdata.php
-  modis_hotspots = st_read(datadir("fire_detections/modis_fire_2020_366_conus_shapefile/modis_fire_2020_366_conus.shp"))
-  viirs_hotspots = st_read(datadir("fire_detections/viirs_iband_fire_2020_366_conus_shapefile/viirs_iband_fire_2020_366_conus.shp"))	
+  modis_hotspots = st_read(datadir("fire_detections/modis_fire_2021_365_conus_shapefile/modis_fire_2021_365_conus.shp"))
+  viirs_hotspots = st_read(datadir("fire_detections/viirs_iband_fire_2021_365_conus_shapefile/viirs_iband_fire_2021_365_conus.shp"))	
   viirs_hotspots = viirs_hotspots %>%
     rename(TEMP = BT4TEMP,
            VIIRS_CONF = CONF) %>%
@@ -165,7 +166,7 @@ if(!file.exists(datadir("intermediate/hotspots_compiled_caclip.gpkg"))) {
            LAT < 42)
   hotspots = hotspots %>% st_transform(the.prj)
   #hotspots = st_intersection(hotspots,ca) # this isn't working for some reason. But that's OK because there aren't too many points that are outside CA but within the lat/long bounds above
-  st_write(hotspots,datadir("intermediate/hotspots_compiled_caclip.gpkg"),append=FALSE)
+  st_write(hotspots,datadir("intermediate/hotspots_compiled_caclip_2021.gpkg"),append=FALSE)
 } else {
   hotspots = st_read(datadir("intermediate/hotspots_compiled_caclip.gpkg"))
   st_crs(hotspots) = the.prj
