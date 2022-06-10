@@ -1,1 +1,1 @@
-/home/derek/Documents/data/2020-wildfire-mapping_data/
+/Users/derek/Documents/repo_data_local/2020-wildfire-mapping-data/
