@@ -80,8 +80,12 @@ fire.perims = fire.perims %>%
   mutate(Fire_ID = paste0("2020-",FIRENAME,Fire_ID))
 
 ## New method using Cal Fire perims
-fire.perims = st_read(datadir("fire_perims/fire20_1.gdb"), layer="firep20_1")
+fire.perims = st_read(datadir("fire_perims/fire21_1.gdb"), layer="firep21_1")
 fire.perims = st_read(datadir("fire_perims/ca3858612053820210815_20201011_20211016_ravg_data/ca3858612053820210815_20201011_20211016_burn_bndy.shp")) %>% st_union
+
+#dixie
+fire.perims = st_read(datadir("fire_perims/ca3987612137920210714_20201012_20211015_ravg_data/ca3987612137920210714_20201012_20211015_burn_bndy.shp")) %>% st_union
+
 fire.perims = fire.perims %>%
   mutate(state = "CA") %>%
   rename(DISCOVERYD = ALARM_DATE) %>%
@@ -91,6 +95,9 @@ fire.perims = fire.perims %>%
   mutate(Fire_ID = paste0("2020_",FIRE_NAME,"_",INC_NUM))
 # Filter to 2020 fires, CA, > 1000 acres
 
+fire.perims = fire.perims %>%
+  filter(FIRE_NAME == "SUGAR" & YEAR_ == 2021)
+
 # temporary, only run for GOLD and RED SALMON COMPLEX
 fire.perims = fire.perims %>%
   filter(FIRE_NAME %in% c("GOLD","RED SALMON COMPLEX"))
@@ -99,7 +106,7 @@ fire.perims = fire.perims %>%
 
 
 # Year of fires. You will need to modify this file if you have several years to process
-	year <- 202 # <- mod by DYoung. Originai: fire.perims$Year[1]
+	year <- 2021 # <- mod by DYoung. Originai: fire.perims$Year[1]
 
 
 # Set the output pixel size here. Canadian folk might want to consider 100 or 200 m.
@@ -168,7 +175,7 @@ if(!file.exists(datadir("intermediate/hotspots_compiled_caclip.gpkg"))) {
   #hotspots = st_intersection(hotspots,ca) # this isn't working for some reason. But that's OK because there aren't too many points that are outside CA but within the lat/long bounds above
   st_write(hotspots,datadir("intermediate/hotspots_compiled_caclip_2021.gpkg"),append=FALSE)
 } else {
-  hotspots = st_read(datadir("intermediate/hotspots_compiled_caclip.gpkg"))
+  hotspots = st_read(datadir("intermediate/hotspots_compiled_caclip_2021.gpkg"))
   st_crs(hotspots) = the.prj
 }
 
@@ -176,7 +183,7 @@ if(!file.exists(datadir("intermediate/hotspots_compiled_caclip.gpkg"))) {
 
 
 fire.list <- "33CBB9DC-6983-4F47-B821-9C9A6CAC381D" # <- DYoung mod. Original: unique(subset(fire.perims, Year == year)$Fire_ID)
-fire.list <- unique(subset(fire.perims)$Fire_ID)
+fire.list <- unique(subset(fire.perims)$FIRE_NAME)
 fire.list = base::setdiff(fire.list,"2020_CREEK_00001391")
 
 
@@ -184,7 +191,7 @@ for (xx in 1:length(fire.list)) {
 		
 	fire <- fire.list[[xx]]
 
-	fire.shp <- subset(fire.perims, Fire_ID == fire)
+	fire.shp <- subset(fire.perims, FIRE_NAME == fire)
 
 	fire.shp.prj <- st_transform(fire.shp, crs=the.prj)
 	fire.shp.buffer.prj <- st_buffer(fire.shp.prj, dist=750)
@@ -193,7 +200,7 @@ for (xx in 1:length(fire.list)) {
 	# If there are clearly times when a fire should not be burning, those boundaries can be set here. Sometimes the fire detection
 	# data picks up on industrial activities or slash pile burning or ???. The numbers correspond to Julian day.
 
-	min.date <- fire.shp$DISCOVERYD %>% yday() - 2# <- DYoung mod. Original: 100
+	min.date <- fire.shp$ALARM_DATE %>% yday() - 2# <- DYoung mod. Original: 100
 	max.date <- 366 # < DYoung mod. Original: 330
 
 
@@ -306,16 +313,17 @@ for (xx in 1:length(fire.list)) {
 
 	# Get fire perimeter shapefile
 
-	fire.shp <- subset(fire.perims, Fire_ID == fire)
+	fire.shp <- subset(fire.perims, FIRE_NAME == fire)
 	fire.shp <- st_transform(fire.shp, crs=the.prj)
 
 	# Get extent of fire perimeter of interest
 	# Set number of row and columns for outputs
+	
 
-	(xmin <- (round(xmin(extent(fire.shp))/pixel.size) * pixel.size) - 15)
-	(xmax <- (round(xmax(extent(fire.shp))/pixel.size) * pixel.size) + 15)
-	(ymin <- (round(ymin(extent(fire.shp))/pixel.size) * pixel.size) - 15)
-	(ymax <- (round(ymax(extent(fire.shp))/pixel.size) * pixel.size) + 15)
+	(xmin <- (round(xmin(extent(fire.shp %>% as("Spatial")))/pixel.size) * pixel.size) - 15)
+	(xmax <- (round(xmax(extent(fire.shp %>% as("Spatial")))/pixel.size) * pixel.size) + 15)
+	(ymin <- (round(ymin(extent(fire.shp %>% as("Spatial")))/pixel.size) * pixel.size) - 15)
+	(ymax <- (round(ymax(extent(fire.shp %>% as("Spatial")))/pixel.size) * pixel.size) + 15)
 	(nrow <- (ymax-ymin) / pixel.size)
 	(ncol <- (xmax-xmin) / pixel.size)
 
@@ -325,7 +333,7 @@ for (xx in 1:length(fire.list)) {
 
 	blank.raster <- raster(nrows=nrow, ncols=ncol, xmn=xmin, xmx=xmax, ymn=ymin, ymx=ymax)
 	crs(blank.raster) = the.prj
-	fire.perim.raster <- fasterize(fire.shp %>% as("sf"), blank.raster)
+	fire.perim.raster <- rasterize(fire.shp %>% as("Spatial"), blank.raster)
 
 	## Some perimeters may have zero fire detections, so a directory may not have been created in stage 1
 	if (dir.exists(datadir(paste0("fire_progressions_2021/", fire)))) { # <- DYoung mod using new data directory reference
@@ -446,7 +454,7 @@ for (xx in 1:length(fire.list)) {
 			
 			modeled.dob <- rasterFromXYZ(xyz, res=c(pixel.size, pixel.size), digits=0, crs=the.prj)		
 			# V Mod by DY to use new data folder reference
-			terra::writeRaster(modeled.dob %>% rast, datadir(paste0("fire_progressions_2021/",fire,"/", fire,"_dob.temp.tif")))
+			terra::writeRaster(modeled.dob, datadir(paste0("fire_progressions_2021/",fire,"/", fire,"_dob.temp.tif")))
 			
 			
 		}
@@ -556,7 +564,7 @@ for (xx in 1:length(fire.list)) {
 		# This is the final DOB estimate	
 		modeled.dob <- rasterFromXYZ(dob.df, res=c(pixel.size,pixel.size), digits=0, crs=(the.prj))
 		# V DYoung mod to use new data folder reference
-		writeRaster(modeled.dob %>% rast, datadir(paste0("fire_progressions_2021/",fire,"/", fire,"_dob.tif")))
+		writeRaster(modeled.dob, datadir(paste0("fire_progressions_2021/",fire,"/", fire,"_dob.tif")))
 #		file.remove('dob.tmp.tif'); file.remove('dob.tmp.tfw')
 	}
 
