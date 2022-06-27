@@ -88,10 +88,10 @@ perim7$perim_area_ratio = perim7$perim / perim7$area
 
 perim6 = perim6[perim7$perim_area_ratio < .01,]
 
-st_write(perim6,datadir("temp/focal_caldor.gpkg"), delete_dsn=TRUE)
+st_write(perim6,datadir("temp/focal_dixie.gpkg"), delete_dsn=TRUE)
 
 # make a version that's the fire perim but inverse (to mask out where we don't want)
 
 focal_neg_mask = st_difference(perim,perim6 %>% st_union)
 
-st_write(focal_neg_mask,datadir("temp/focal_neg_mask_caldor.gpkg"), delete_dsn =TRUE)
+st_write(focal_neg_mask,datadir("temp/focal_neg_mask_dixie.gpkg"), delete_dsn =TRUE)
