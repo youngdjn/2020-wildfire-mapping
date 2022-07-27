@@ -69,3 +69,9 @@ plots = plots %>%
 st_write(plots %>% filter(bn == TRUE), datadir("focal_area_2022/dixie-selected-for-crew/named/dixie-plots-bn.kml"), delete_dsn = TRUE)
 st_write(plots %>% filter(bn == FALSE | is.na(bn)), datadir("focal_area_2022/dixie-selected-for-crew/named/dixie-plots-bk.kml"), delete_dsn = TRUE)
 
+
+## Save camps KML
+
+camps = st_read(datadir("focal_area_2022/dixie-selected-for-crew/crew-camps.gpkg"))
+
+st_write(camps,datadir("focal_area_2022/dixie-selected-for-crew/crew-camps.kml"))
